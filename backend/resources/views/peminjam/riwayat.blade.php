@@ -1,3 +1,5 @@
+@extends('layouts.peminjam')
+
 <!DOCTYPE html>
 
 <html lang="id">

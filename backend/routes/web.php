@@ -71,11 +71,28 @@ Route::middleware(['auth', 'role:petugas'])->prefix('petugas')->name('petugas.')
 
 // Peminjam gak modal
 Route::middleware(['auth', 'role:peminjam'])->prefix('peminjam')->name('peminjam.')->group(function () {
-    // Katalog Avatar Kreator
-    Route::get('/katalog', [PeminjamController::class, 'katalogAlat'])->name('katalog');
-    Route::post('/peminjaman/ajukan', [PeminjamController::class, 'ajukanPeminjaman'])->name('peminjaman.ajukan');
-    Route::get('/riwayat', [PeminjamController::class, 'riwayatPeminjaman'])->name('riwayat');
+    // Dashboard
+    Route::get('/dashboard', [PeminjamController::class, 'dashboard'])
+        ->name('dashboard');
+    // Katalog Alat
+    Route::get('/katalog', [PeminjamController::class, 'katalogAlat'])
+        ->name('katalog');
+    // Ajukan Peminjaman
+    Route::post('/peminjaman/ajukan', [PeminjamController::class, 'ajukanPeminjaman'])
+        ->name('peminjaman.ajukan');
+    // Riwayat Peminjaman
+    Route::get('/riwayat', [PeminjamController::class, 'riwayatPeminjaman'])
+        ->name('riwayat');
+    // Peminjaman
+    Route::get('/peminjaman', [PeminjamController::class, 'peminjaman'])
+        ->name('peminjaman');
+    Route::get('/peminjaman', [PeminjamController::class, 'peminjaman'])
+        ->name('peminjaman.index');
+    Route::get('/pengembalian', [PeminjamController::class, 'pengembalian'])
+        ->name('pengembalian.index');
+
 });
+
 
 // Route Tamu Tak Dikenal
 Route::middleware('guest')->group(function () {

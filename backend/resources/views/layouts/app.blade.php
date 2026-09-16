@@ -19,7 +19,7 @@
         <aside class="w-64 bg-gray-900 text-white flex flex-col hidden md:flex">
 
             <div class="p-5 text-xl font-bold tracking-wider border-b border-gray-800">
-                PANEL ADMIN
+                PANEL {{ strtoupper(auth()->user()->role) }}
             </div>
 
             <nav class="flex-1 p-4 space-y-2">
@@ -125,11 +125,9 @@
             <!-- INFORMASI USER -->
             <div class="p-4 border-t border-gray-800 text-sm text-gray-400">
 
-                Logged in as:
-
-                <span class="text-white font-semibold">
-                    {{ auth()->user()->name }}
-                </span>
+                <div class="text-xs text-gray-500 mb-1">Login sebagai</div>
+                <div class="text-white font-semibold">{{ ucfirst(auth()->user()->role) }}</div>
+                <div class="text-xs text-gray-500 mt-1">{{ auth()->user()->namee }}</div>
 
             </div>
 

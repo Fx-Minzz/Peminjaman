@@ -62,6 +62,30 @@ class PeminjamController extends Controller
         }
     }
 
+    public function peminjaman() { 
+        $peminjamans = Peminjaman::with('detailPinjams.alat')
+            ->where('user_id', auth()->id())
+            ->whereIn('status', ['diajukan', 'dipinjam'])
+            ->latest()
+            ->get();
+        return view('peminjam.peminjaman', compact('peminjamans'));
+    }
+
+    // Melihat daftar peminjaman yang sedang dipinjam dan perlu dikembalikan
+    public function pengembalian()
+    {
+        $peminjamans = Peminjaman::with([
+            'detailPinjams.alat',
+            'pengembalian'
+        ])
+            ->where('user_id', auth()->id())
+            ->where('status', 'dipinjam')
+            ->latest()
+            ->get();
+
+        return view('peminjam.pengembalian', compact('peminjamans'));
+    }
+
     // Melihat riwayat peminjaman user yang sedang login
     public function riwayatPeminjaman()
     {
@@ -71,5 +95,34 @@ class PeminjamController extends Controller
             ->get();
 
         return view('peminjam.riwayat', compact('peminjamans'));
+    }
+
+    // Dashboard Peminjam
+    public function dashboard()
+    {
+        $userId = auth()->id();
+
+        $totalPeminjaman = Peminjaman::where('user_id', $userId)->count();
+
+        $sedangDipinjam = Peminjaman::where('user_id', $userId)
+            ->where('status', 'dipinjam')
+            ->count();
+
+        $menungguPersetujuan = Peminjaman::where('user_id', $userId)
+            ->where('status', 'diajukan')
+            ->count();
+
+        $peminjamanTerbaru = Peminjaman::with('detailPinjams.alat')
+            ->where('user_id', $userId)
+            ->latest('created_at')
+            ->take(5)
+            ->get();
+
+        return view('peminjam.dashboard', compact(
+            'totalPeminjaman',
+            'sedangDipinjam',
+            'menungguPersetujuan',
+            'peminjamanTerbaru'
+        ));
     }
 }
