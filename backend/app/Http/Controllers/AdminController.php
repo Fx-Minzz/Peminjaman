@@ -93,6 +93,10 @@ public function storeAlat(Request $request)
 
     Alat::create($data);
 
+    $this->catatAktivitas(
+        "Menambahkan alat '{$request->nama_alat}'."
+    );
+
     return redirect()
         ->route('admin.alat.index')
         ->with('success', 'Data alat berhasil ditambahkan.');
@@ -141,6 +145,10 @@ public function updateAlat(Request $request, $id)
 
     $alat->update($data);
 
+    $this->catatAktivitas(
+        "Mengubah data alat '{$alat->nama_alat}'."
+    );
+
     return redirect()
         ->route('admin.alat.index')
         ->with('success', 'Data alat berhasil diperbarui.');
@@ -157,6 +165,10 @@ public function destroyAlat($id)
     }
 
     $alat->delete();
+
+    $this->catatAktivitas(
+        "Menghapus alat '{$alat->nama_alat}'."
+    );
 
     return redirect()
         ->route('admin.alat.index')
@@ -282,6 +294,10 @@ public function storePengembalian(Request $request)
             'petugas_id' => auth()->id(),
         ]);
 
+        $this->catatAktivitas(
+            "Mencatat pengembalian peminjaman #{$peminjaman->id}."
+        );
+
         /*
         |--------------------------------------------------------------------------
         | Kembalikan stok alat
@@ -301,6 +317,10 @@ public function storePengembalian(Request $request)
         $peminjaman->update([
             'status' => 'dikembalikan',
         ]);
+
+        $this->catatAktivitas(
+            "Mengubah data pengembalian #{$pengembalian->id}."
+        );
 
         DB::commit();
 
@@ -353,6 +373,10 @@ public function destroyPengembalian($id)
 
         // Hapus data pengembalian
         $pengembalian->delete();
+
+        $this->catatAktivitas(
+            "Menghapus data pengembalian #{$pengembalian->id}."
+        );
 
         DB::commit();
 
@@ -549,6 +573,10 @@ public function storeUser(Request $request)
 
     User::create($data);
 
+    $this->catatAktivitas(
+        "Menambahkan user '{$request->name}' dengan role {$request->role}."
+    );
+
     return redirect()
         ->route('admin.user.index')
         ->with('success', 'User berhasil ditambahkan.');
@@ -612,6 +640,10 @@ public function updateUser(Request $request, $id)
 
     $user->update($data);
 
+    $this->catatAktivitas(
+        "Mengubah data user '{$user->name}'."
+    );
+
     return redirect()
         ->route('admin.user.index')
         ->with('success', 'Data user berhasil diperbarui.');
@@ -631,6 +663,10 @@ public function destroyUser($id)
     }
 
     $user->delete();
+
+    $this->catatAktivitas(
+        "Menghapus user '{$user->name}'."
+    );
 
     return redirect()
         ->route('admin.user.index')
@@ -667,6 +703,10 @@ public function storeKategori(Request $request)
         'nama_kategori' => $request->nama_kategori,
     ]);
 
+    $this->catatAktivitas(
+        "Menambahkan kategori '{$request->nama_kategori}'."
+    );
+
     return redirect()
         ->route('admin.kategori.index')
         ->with('success', 'Kategori berhasil ditambahkan.');
@@ -691,6 +731,10 @@ public function updateKategori(Request $request, $id)
         'nama_kategori' => $request->nama_kategori,
     ]);
 
+    $this->catatAktivitas(
+        "Mengubah data kategori '{$kategori->nama_kategori}'."
+    );
+
     return redirect()
         ->route('admin.kategori.index')
         ->with('success', 'Kategori berhasil diperbarui.');
@@ -701,6 +745,10 @@ public function destroyKategori($id)
     $kategori = Kategori::findOrFail($id);
 
     $kategori->delete();
+
+    $this->catatAktivitas(
+        "Menghapus kategori '{$kategori->nama_kategori}'."
+    );
 
     return redirect()
         ->route('admin.kategori.index')
@@ -781,6 +829,8 @@ public function storePeminjaman(Request $request)
         // (Opsional, atau dikurangi saat status berubah jadi 'dipinjam')
 
         DB::commit();
+
+        $this->catatAktivitas("Menambahkan peminjaman baru untuk user ID {$request->user_id}.");
 
         return redirect()
             ->route('admin.peminjaman.index')
@@ -900,6 +950,10 @@ public function updateStatusPeminjaman(Request $request, $id)
             'status' => $statusBaru
         ]);
 
+        $this->catatAktivitas(
+            "Mengubah status peminjaman #{$peminjaman->id} dari '{$statusLama}' menjadi '{$statusBaru}'."
+        );
+
         DB::commit();
 
         return redirect()
@@ -980,6 +1034,13 @@ public function logAktivitas() {
         ->paginate(15);
 
     return view('admin.log.index', compact('logs'));
+}
+
+private function catatAktivitas($aktivitas) {
+    LogAktivitas::create([
+        'user_id' => auth()->id(),
+        'aktivitas' => $aktivitas,
+    ]);
 }
 
 }
