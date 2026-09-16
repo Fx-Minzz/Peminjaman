@@ -55,6 +55,9 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::put('/users/{id}', [AdminController::class, 'updateUser'])->name('user.update');
     Route::delete('/users/{id}', [AdminController::class, 'destroyUser'])->name('user.destroy');
 
+    // Log Aktivitas
+    Route::get('/log-aktivitas', [AdminController::class, 'logAktivitas'])->name('log.index');
+
 });
 
 // Para Pekerja (Petugas)

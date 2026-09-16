@@ -83,6 +83,15 @@
             Kelola Pengembalian
         </a>
 
+        {{-- Log Aktivitas --}}
+        <a href="{{ route('admin.log.index') }}"
+           class="block px-4 py-2 rounded-lg transition
+           {{ request()->routeIs('admin.log.*')
+                ? 'bg-gray-800 text-white font-medium shadow'
+                : 'text-gray-400 hover:bg-gray-800 hover:text-white' }}">
+            Log Aktivitas
+        </a>
+
     @endif
 
 
@@ -139,23 +148,34 @@
 
 
             <!-- NAVBAR ATAS -->
-            <header class="bg-white shadow-sm h-16 flex items-center justify-between px-6 z-10">
+            <header class="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-6 shrink-0">
 
-                <div class="text-lg font-semibold text-gray-800">
-                    @yield('header-title', 'Dashboard')
+                <!-- Judul Halaman -->
+                <div class="flex items-center">
+                    <h1 class="text-lg font-semibold text-gray-800">
+                        @yield('header-title', 'Dashboard')
+                    </h1>
                 </div>
 
-                <div>
+                <!-- User & Logout -->
+                <div class="flex items-center gap-4">
+
+                    <div class="hidden sm:block text-right">
+                        <p class="text-sm font-semibold text-gray-800">
+                            {{ auth()->user()->name }}
+                        </p>
+                        <p class="text-xs text-gray-500 uppercase">
+                            {{ auth()->user()->role }}
+                        </p>
+                    </div>
 
                     <form action="{{ route('logout') }}" method="POST">
-
                         @csrf
-
-                        <button type="submit"
-                            class="bg-red-500 hover:bg-red-600 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
+                        <button
+                            type="submit"
+                            class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-semibold rounded-lg transition duration-200">
                             Logout
                         </button>
-
                     </form>
 
                 </div>

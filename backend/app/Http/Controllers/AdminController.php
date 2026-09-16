@@ -18,9 +18,25 @@ class AdminController extends Controller
     // Menampilkan Dashboard Admin & Log Aktivitas
     public function index()
     {
-        $logs = LogAktivitas::with('user')->latest()->take(10)->get();
-
-        return view('admin.dashboard', compact('logs'));
+        $totalUser = User::count();
+        $totalAlat = Alat::count();
+        $totalPeminjaman = Peminjaman::count();
+        $menungguPersetujuan = Peminjaman::where('status', 'diajukan')->count();
+        $sedangDipinjam = Peminjaman::where('status', 'dipinjam')->count();
+        $peminjamanSelesai = Peminjaman::where('status', 'dikembalikan')->count();
+        $logsTerbaru = LogAktivitas::with('user')
+            ->latest()
+            ->take(5)
+            ->get();
+        return view('admin.dashboard', compact(
+            'totalUser',
+            'totalAlat',
+            'totalPeminjaman',
+            'menungguPersetujuan',
+            'sedangDipinjam',
+            'peminjamanSelesai',
+            'logsTerbaru'
+        ));
     }
 
     // CRUD Alat: Menampilkan daftar alat
@@ -956,6 +972,14 @@ public function searchAlat(Request $request)
         ->get(['id', 'nama_alat', 'stok']);
 
     return response()->json($alats);
+}
+
+public function logAktivitas() {
+    $logs = LogAktivitas::with('user')
+        ->latest()
+        ->paginate(15);
+
+    return view('admin.log.index', compact('logs'));
 }
 
 }
