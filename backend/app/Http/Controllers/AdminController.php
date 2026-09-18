@@ -517,15 +517,38 @@ public function prosesPengembalian($id)
 public function indexUser(Request $request)
 {
     $search = $request->input('search');
+    $role = $request->input('role');
+    $jenisKelamin = $request->input('jenis_kelamin');
+    $status = $request->input('status');
+    $sort = $request->input('sort', 'latest');
 
-    $users = User::when($search, function ($query, $search) {
-        return $query->where('name', 'like', "%{$search}%")
-                     ->orWhere('email', 'like', "%{$search}%")
-                     ->orWhere('role', 'like', "%{$search}%");
-    })
-      ->latest()
-        ->paginate(10) // Tampilkan 10 data per halaman
-            ->withQueryString(); // memastikan parameter search tetap ada saat pindah halaman
+    $users = User::query()
+        ->when($search, function ($query, $search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+        })
+        ->when($role, function ($query, $role) {
+            $query->where('role', $role);
+        })
+        ->when($jenisKelamin, function ($query, $jenisKelamin) {
+            $query->where('jenis_kelamin', $jenisKelamin);
+        })
+        ->when($status, function ($query, $status) {
+            $query->where('status', $status);
+        });
+
+    // Sort user
+    if ($sort === 'oldest') {
+        $users->oldest();
+    } else {
+        $users->latest();
+    }
+
+    $users = $users
+        ->paginate(10)
+        ->withQueryString();
 
     $totalUser = User::count();
     $totalAdmin = User::where('role', 'admin')->count();
@@ -535,6 +558,10 @@ public function indexUser(Request $request)
     return view('admin.user.index', compact(
         'users',
         'search',
+        'role',
+        'jenisKelamin',
+        'status',
+        'sort',
         'totalUser',
         'totalAdmin',
         'totalPetugas',
