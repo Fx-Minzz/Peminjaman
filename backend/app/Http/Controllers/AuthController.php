@@ -22,11 +22,20 @@ class AuthController extends Controller
         ]);
 
         if (Auth::attempt($credentials)) {
-            $request->session()->regenerate();
-
             $user = Auth::user();
 
-            // Redirect berdasarkan Role sesuai matriks Anda
+            // Cek status akun
+            if ($user->status === 'nonaktif') {
+                Auth::logout();
+
+                return back()
+                    ->withInput($request->only('email'))
+                    ->with('error', 'Akun Anda sedang dinonaktifkan. Silakan hubungi administrator.');
+            }
+
+            $request->session()->regenerate();
+
+            // Redirect berdasarkan Role
             if ($user->role === 'admin') {
                 return redirect()->route('admin.admin.dashboard');
             } elseif ($user->role === 'petugas') {

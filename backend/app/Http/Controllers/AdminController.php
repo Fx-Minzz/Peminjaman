@@ -527,7 +527,19 @@ public function indexUser(Request $request)
         ->paginate(10) // Tampilkan 10 data per halaman
             ->withQueryString(); // memastikan parameter search tetap ada saat pindah halaman
 
-    return view('admin.user.index', compact('users', 'search'));
+    $totalUser = User::count();
+    $totalAdmin = User::where('role', 'admin')->count();
+    $totalPetugas = User::where('role', 'petugas')->count();
+    $totalPeminjam = User::where('role', 'peminjam')->count();
+
+    return view('admin.user.index', compact(
+        'users',
+        'search',
+        'totalUser',
+        'totalAdmin',
+        'totalPetugas',
+        'totalPeminjam'
+    ));
 }
 
 // Menampilkan Form Tambah User
@@ -540,20 +552,23 @@ public function createUser()
 public function storeUser(Request $request)
 {
     $request->validate([
-        'name'         => 'required|string|max:255',
-        'email'        => 'required|string|email|max:255|unique:users',
-        'password'     => 'required|string|min:6',
-        'role'         => 'required|in:admin,petugas,peminjam',
-        'no_hp'        => 'nullable|string|max:20',
-        'foto_profile' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+        'name'          => 'required|string|max:255',
+        'jenis_kelamin' => 'nullable|in:L,P',
+        'email'         => 'required|string|email|max:255|unique:users',
+        'password'      => 'required|string|min:6',
+        'role'          => 'required|in:admin,petugas,peminjam',
+        'no_hp'         => 'nullable|string|max:20',
+        'foto_profile'  => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
     ]);
 
     $data = [
-        'name'     => $request->name,
-        'email'    => $request->email,
-        'password' => Hash::make($request->password),
-        'role'     => $request->role,
-        'no_hp'    => $request->no_hp,
+        'name'          => $request->name,
+        'jenis_kelamin' => $request->jenis_kelamin,
+        'email'         => $request->email,
+        'password'      => Hash::make($request->password),
+        'role'          => $request->role,
+        'status'        => 'aktif',
+        'no_hp'         => $request->no_hp,
     ];
 
     // Upload foto profil jika ada
@@ -590,24 +605,37 @@ public function editUser($id)
     return view('admin.user.edit', compact('user'));
 }
 
+// Detail User
+public function showUser($id) {
+    $user = User::findOrFail($id);
+    $aktivitas = LogAktivitas::where('user_id', $user->id)
+        ->latest()
+        ->paginate(5);
+    return view('admin.user.show', compact('user', 'aktivitas'));
+}
+
 // Memperbarui Data User
 public function updateUser(Request $request, $id)
 {
     $user = User::findOrFail($id);
 
     $request->validate([
-        'name'         => 'required|string|max:255',
-        'email'        => 'required|string|email|max:255|unique:users,email,' . $id,
-        'role'         => 'required|in:admin,petugas,peminjam',
-        'no_hp'        => 'nullable|string|max:20',
-        'foto_profile' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+        'name'          => 'required|string|max:255',
+        'jenis_kelamin' => 'nullable|in:L,P',
+        'email'         => 'required|string|email|max:255|unique:users,email,' . $id,
+        'role'          => 'required|in:admin,petugas,peminjam',
+        'status'        => 'required|in:aktif,nonaktif',
+        'no_hp'         => 'nullable|string|max:20',
+        'foto_profile'  => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
     ]);
 
     $data = [
-        'name'  => $request->name,
-        'email' => $request->email,
-        'role'  => $request->role,
-        'no_hp' => $request->no_hp,
+        'name'          => $request->name,
+        'jenis_kelamin' => $request->jenis_kelamin,
+        'email'         => $request->email,
+        'role'          => $request->role,
+        'status'        => $request->status,
+        'no_hp'         => $request->no_hp,
     ];
 
     // Update password jika diisi

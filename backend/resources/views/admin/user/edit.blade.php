@@ -30,6 +30,33 @@
             @enderror
         </div>
 
+        {{-- Jenis Kelamin --}}
+        <div class="mb-5">
+            <label class="block text-gray-700 text-sm font-semibold mb-2">
+                Jenis Kelamin
+            </label>
+
+            <select
+                name="jenis_kelamin"
+                required
+                class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+                <option value="">-- Pilih Jenis Kelamin --</option>
+
+                <option value="L" {{ old('jenis_kelamin', $user->jenis_kelamin) == 'L' ? 'selected' : '' }}>
+                    Laki-laki
+                </option>
+
+                <option value="P" {{ old('jenis_kelamin', $user->jenis_kelamin) == 'P' ? 'selected' : '' }}>
+                    Perempuan
+                </option>
+            </select>
+
+            @error('jenis_kelamin')
+                <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span>
+            @enderror
+        </div>
+
         {{-- Email --}}
         <div class="mb-5">
             <label class="block text-gray-700 text-sm font-semibold mb-2">
@@ -94,6 +121,33 @@
             </select>
 
             @error('role')
+                <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span>
+            @enderror
+        </div>
+
+        {{-- Status --}}
+        <div class="mb-5">
+            <label class="block text-gray-700 text-sm font-semibold mb-2">
+                Status
+            </label>
+
+            <select
+                name="status"
+                required
+                class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+                <option value="aktif"
+                    {{ old('status', $user->status) === 'aktif' ? 'selected' : '' }}>
+                    Aktif
+                </option>
+
+                <option value="nonaktif"
+                    {{ old('status', $user->status) === 'nonaktif' ? 'selected' : '' }}>
+                    Nonaktif
+                </option>
+            </select>
+
+            @error('status')
                 <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span>
             @enderror
         </div>

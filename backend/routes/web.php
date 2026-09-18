@@ -54,6 +54,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/users/{id}/edit', [AdminController::class, 'editUser'])->name('user.edit');
     Route::put('/users/{id}', [AdminController::class, 'updateUser'])->name('user.update');
     Route::delete('/users/{id}', [AdminController::class, 'destroyUser'])->name('user.destroy');
+    Route::get('/users/{id}', [AdminController::class, 'showUser'])->name('user.show');
 
     // Log Aktivitas
     Route::get('/log-aktivitas', [AdminController::class, 'logAktivitas'])->name('log.index');
