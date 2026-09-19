@@ -21,6 +21,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/kategori/{id}/edit', [AdminController::class, 'editKategori'])->name('kategori.edit');
     Route::put('/kategori/{id}', [AdminController::class, 'updateKategori'])->name('kategori.update');
     Route::delete('/kategori/{id}', [AdminController::class, 'destroyKategori'])->name('kategori.destroy');
+    Route::get('/kategori/{id}', [AdminController::class, 'showKategori'])->name('kategori.show');
 
     // CRUD lupa balikin
     Route::get('/pengembalian', [AdminController::class, 'indexPengembalian'])->name('pengembalian.index');
@@ -46,6 +47,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/alat/{id}/edit', [AdminController::class, 'editAlat'])->name('alat.edit');
     Route::put('/alat/{id}', [AdminController::class, 'updateAlat'])->name('alat.update');
     Route::delete('/alat/{id}', [AdminController::class, 'destroyAlat'])->name('alat.destroy');
+    Route::get('/alat/{id}', [AdminController::class, 'showAlat'])->name('alat.show');
 
     // CRUD User
     Route::get('/users', [AdminController::class, 'indexUser'])->name('user.index');

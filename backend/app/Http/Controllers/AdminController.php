@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use App\Models\Peminjaman;
 use App\Models\DetailPinjam;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class AdminController extends Controller
 {
@@ -43,20 +44,64 @@ class AdminController extends Controller
 public function indexAlat(Request $request)
 {
     $search = $request->input('search');
+    $kategori = $request->input('kategori');
+    $kondisi = $request->input('kondisi');
+    $stok = $request->input('stok');
+    $sort = $request->input('sort', 'latest');
 
     $alats = Alat::with('kategori')
         ->when($search, function ($query, $search) {
-            return $query->where('nama_alat', 'like', "%{$search}%")
-                ->orWhere('status_kondisi', 'like', "%{$search}%")
-                ->orWhereHas('kategori', function ($q) use ($search) {
-                    $q->where('nama_kategori', 'like', "%{$search}%");
-                });
+            $query->where(function ($q) use ($search) {
+                $q->where('nama_alat', 'like', "%{$search}%")
+                    ->orWhere('status_kondisi', 'like', "%{$search}%")
+                    ->orWhereHas('kategori', function ($q) use ($search) {
+                        $q->where('nama_kategori', 'like', "%{$search}%");
+                    });
+            });
         })
-        ->latest()
+        ->when($kategori, function ($query, $kategori) {
+            $query->where('kategori_id', $kategori);
+        })
+        ->when($kondisi, function ($query, $kondisi) {
+            $query->where('status_kondisi', $kondisi);
+        })
+        ->when($stok === 'tersedia', function ($query) {
+            $query->where('stok', '>', 0);
+        })
+        ->when($stok === 'habis', function ($query) {
+            $query->where('stok', 0);
+        });
+
+    // Sort
+    if ($sort === 'oldest') {
+        $alats->oldest();
+    } elseif ($sort === 'name_asc') {
+        $alats->orderBy('nama_alat', 'asc');
+    } elseif ($sort === 'name_desc') {
+        $alats->orderBy('nama_alat', 'desc');
+    } elseif ($sort === 'stok_desc') {
+        $alats->orderBy('stok', 'desc');
+    } elseif ($sort === 'stok_asc') {
+        $alats->orderBy('stok', 'asc');
+    } else {
+        $alats->latest();
+    }
+
+    $alats = $alats
         ->paginate(10)
         ->withQueryString();
 
-    return view('admin.alat.index', compact('alats', 'search'));
+    $kategoris = Kategori::orderBy('nama_kategori')->get();
+
+    return view('admin.alat.index', compact(
+        'alats',
+        'kategoris',
+        'search',
+        'kategori',
+        'kondisi',
+        'stok',
+        'sort'
+    ));
 }
 
 // 2. Menampilkan form tambah alat
@@ -173,6 +218,29 @@ public function destroyAlat($id)
     return redirect()
         ->route('admin.alat.index')
         ->with('success', 'Data alat berhasil dihapus.');
+}
+
+public function showAlat($id)
+{
+    $alat = Alat::with('kategori')->findOrFail($id);
+
+    $riwayatPeminjaman = DetailPinjam::with([
+        'peminjaman.user',
+        'peminjaman.pengembalian'
+    ])
+        ->where('alat_id', $alat->id)
+        ->latest()
+        ->paginate(5)
+        ->withQueryString();
+
+    $totalDipinjam = DetailPinjam::where('alat_id', $alat->id)
+        ->sum('jumlah');
+
+    return view('admin.alat.show', compact(
+        'alat',
+        'riwayatPeminjaman',
+        'totalDipinjam'
+    ));
 }
 
 // PENGEMBALIAN
@@ -542,6 +610,10 @@ public function indexUser(Request $request)
     // Sort user
     if ($sort === 'oldest') {
         $users->oldest();
+    } elseif ($sort === 'name_asc') {
+        $users->orderBy('name', 'asc');
+    } elseif ($sort === 'name_desc') {
+        $users->orderBy('name', 'desc');
     } else {
         $users->latest();
     }
@@ -732,15 +804,32 @@ public function destroyUser($id)
 public function indexKategori(Request $request)
 {
     $search = $request->input('search');
+    $sort = $request->input('sort', 'latest');
 
-    $kategoris = Kategori::when($search, function ($query, $search) {
-        return $query->where('nama_kategori', 'like', "%{$search}%");
-    })
-        ->latest()
+    $kategoris = Kategori::withCount('alat')
+        ->when($search, function ($query, $search) {
+            return $query->where('nama_kategori', 'like', "%{$search}%");
+        });
+
+    if ($sort === 'oldest') {
+        $kategoris->oldest();
+    } elseif ($sort === 'name_asc') {
+        $kategoris->orderBy('nama_kategori', 'asc');
+    } elseif ($sort === 'name_desc') {
+        $kategoris->orderBy('nama_kategori', 'desc');
+    } else {
+        $kategoris->latest();
+    }
+
+    $kategoris = $kategoris
         ->paginate(5)
         ->withQueryString();
 
-    return view('admin.kategori.index', compact('kategoris', 'search'));
+    return view('admin.kategori.index', compact(
+        'kategoris',
+        'search',
+        'sort'
+    ));
 }
 
 public function createKategori()
@@ -799,15 +888,44 @@ public function destroyKategori($id)
 {
     $kategori = Kategori::findOrFail($id);
 
+    // Cek apakah kategori masih digunakan oleh alat
+    $jumlahAlat = Alat::where('kategori_id', $kategori->id)->count();
+
+    if ($jumlahAlat > 0) {
+        return redirect()
+            ->route('admin.kategori.index')
+            ->with(
+                'error',
+                "Kategori '{$kategori->nama_kategori}' tidak dapat dihapus karena masih digunakan oleh {$jumlahAlat} alat."
+            );
+    }
+
+    $namaKategori = $kategori->nama_kategori;
+
     $kategori->delete();
 
+    // Catat aktivitas
     $this->catatAktivitas(
-        "Menghapus kategori '{$kategori->nama_kategori}'."
+        "Menghapus kategori '{$namaKategori}'"
     );
 
     return redirect()
         ->route('admin.kategori.index')
         ->with('success', 'Kategori berhasil dihapus.');
+}
+
+public function showKategori($id)
+{
+    $kategori = Kategori::findOrFail($id);
+
+    $alats = Alat::where('kategori_id', $kategori->id)
+        ->latest()
+        ->paginate(10);
+
+    return view('admin.kategori.show', compact(
+        'kategori',
+        'alats'
+    ));
 }
 
 // 1. Menampilkan daftar peminjaman

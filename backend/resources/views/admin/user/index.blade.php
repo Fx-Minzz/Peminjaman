@@ -138,7 +138,7 @@
                             </div>
 
 
-                            @if(request()->hasAny(['search', 'role', 'jenis_kelamin', 'status']))
+                            @if(request()->hasAny(['search', 'role', 'jenis_kelamin', 'status', 'sort']))
 
                                 <a
                                     href="{{ route('admin.user.index') }}"
@@ -266,12 +266,19 @@
                                 </label>
 
                                 <select name="sort"
-                                    class="w-full rounded-lg border-gray-300 focus:border-emerald-500 focus:ring-emerald-500">
+                                    class="w-full px-3 py-2.5 text-sm bg-white border border-gray-300 rounded-lg
+                                           focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                     <option value="latest" {{ $sort === 'latest' ? 'selected' : '' }}>
                                         Terbaru → Terlama
                                     </option>
                                     <option value="oldest" {{ $sort === 'oldest' ? 'selected' : '' }}>
                                         Terlama → Terbaru
+                                    </option>
+                                    <option value="name_asc" {{ $sort === 'name_asc' ? 'selected' : '' }}>
+                                        Nama (A-Z)
+                                    </option>
+                                    <option value="name_desc" {{ $sort === 'name_desc' ? 'selected' : '' }}>
+                                        Nama (Z-A)
                                     </option>
                                 </select>
                             </div>
