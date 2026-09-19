@@ -932,19 +932,61 @@ public function showKategori($id)
 public function indexPeminjaman(Request $request)
 {
     $search = $request->input('search');
+    $status = $request->input('status');
+    $sort = $request->input('sort', 'latest');
 
-    $peminjamans = Peminjaman::with(['user', 'detailPinjams.alat'])
+    $peminjamans = Peminjaman::with([
+        'user',
+        'detailPinjams.alat'
+    ])
         ->when($search, function ($query, $search) {
-            return $query->where('status', 'like', "%{$search}%")
-                ->orWhereHas('user', function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%");
-                });
+            $query->where(function ($q) use ($search) {
+
+                $q->where('status', 'like', "%{$search}%")
+
+                    ->orWhereHas('user', function ($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%")
+                          ->orWhere('email', 'like', "%{$search}%");
+                    })
+
+                    ->orWhereHas('detailPinjams.alat', function ($q) use ($search) {
+                        $q->where('nama_alat', 'like', "%{$search}%");
+                    });
+            });
         })
-        ->latest()
+        ->when($status, function ($query, $status) {
+            $query->where('status', $status);
+        });
+
+    // Sorting
+    if ($sort === 'oldest') {
+        $peminjamans->oldest();
+    } elseif ($sort === 'name_asc') {
+        $peminjamans->orderBy(
+            User::select('name')
+                ->whereColumn('users.id', 'peminjaman.user_id'),
+            'asc'
+        );
+    } elseif ($sort === 'name_desc') {
+        $peminjamans->orderBy(
+            User::select('name')
+                ->whereColumn('users.id', 'peminjaman.user_id'),
+            'desc'
+        );
+    } else {
+        $peminjamans->latest();
+    }
+
+    $peminjamans = $peminjamans
         ->paginate(10)
         ->withQueryString();
 
-    return view('admin.peminjaman.index', compact('peminjamans', 'search'));
+    return view('admin.peminjaman.index', compact(
+        'peminjamans',
+        'search',
+        'status',
+        'sort'
+    ));
 }
 
 // 2. Menampilkan form tambah peminjaman
@@ -960,36 +1002,101 @@ public function createPeminjaman()
 public function storePeminjaman(Request $request)
 {
     $request->validate([
-        'user_id' => 'required|exists:users,id',
+        'user_id' => [
+            'required',
+            'exists:users,id',
+            function ($attribute, $value, $fail) {
+                $user = User::find($value);
+
+                if (!$user || $user->role !== 'peminjam') {
+                    $fail('User yang dipilih harus memiliki role peminjam.');
+                }
+
+                if ($user && $user->status !== 'aktif') {
+                    $fail('User yang dipilih sedang nonaktif.');
+                }
+            },
+        ],
+
         'tgl_pinjam' => 'required|date',
-        'tgl_kembali_plan' => 'required|date|after_or_equal:tgl_pinjam',
-        'alat_id' => 'required|array',
-        'alat_id.*' => 'exists:alat,id',
-        'jumlah' => 'required|array',
-        'jumlah.*' => 'integer|min:1',
+
+        'tgl_kembali_plan' => [
+            'required',
+            'date',
+            'after_or_equal:tgl_pinjam',
+        ],
+
+        'alat_id' => 'required|array|min:1',
+
+        // Mencegah alat yang sama dipilih lebih dari sekali
+        'alat_id.*' => [
+            'required',
+            'exists:alat,id',
+            'distinct',
+        ],
+
+        'jumlah' => 'required|array|min:1',
+
+        'jumlah.*' => [
+            'required',
+            'integer',
+            'min:1',
+        ],
     ]);
 
     DB::beginTransaction();
 
     try {
-        // Buat transaksi utama peminjaman
+
+        /*
+        |--------------------------------------------------------------------------
+        | Buat transaksi utama
+        |--------------------------------------------------------------------------
+        */
+
         $peminjaman = Peminjaman::create([
             'user_id' => $request->user_id,
             'tgl_pinjam' => $request->tgl_pinjam,
             'tgl_kembali_plan' => $request->tgl_kembali_plan,
-            'status' => 'diajukan', // Status awal
+            'status' => 'diajukan',
         ]);
 
-        // Simpan detail alat yang dipinjam
+        /*
+        |--------------------------------------------------------------------------
+        | Simpan detail alat
+        |--------------------------------------------------------------------------
+        */
+
         foreach ($request->alat_id as $index => $alatId) {
-            $jumlahPinjam = $request->jumlah[$index];
+
+            $jumlahPinjam = (int) $request->jumlah[$index];
 
             $alat = Alat::findOrFail($alatId);
 
-            // Validasi stok
-            if ($alat->stok < $jumlahPinjam) {
-                throw new \Exception("Stok alat '{$alat->nama_alat}' tidak mencukupi.");
+            /*
+            |--------------------------------------------------------------------------
+            | Validasi stok
+            |--------------------------------------------------------------------------
+            */
+
+            if ($alat->stok <= 0) {
+                throw new \Exception(
+                    "Alat '{$alat->nama_alat}' sedang habis."
+                );
             }
+
+            if ($alat->stok < $jumlahPinjam) {
+                throw new \Exception(
+                    "Stok alat '{$alat->nama_alat}' tidak mencukupi. " .
+                    "Stok tersedia: {$alat->stok}."
+                );
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | Simpan detail
+            |--------------------------------------------------------------------------
+            */
 
             DetailPinjam::create([
                 'peminjaman_id' => $peminjaman->id,
@@ -998,23 +1105,43 @@ public function storePeminjaman(Request $request)
             ]);
         }
 
-        // Kurangi stok alat jika status langsung disetujui/dipinjam
-        // (Opsional, atau dikurangi saat status berubah jadi 'dipinjam')
+        /*
+        |--------------------------------------------------------------------------
+        | Commit transaksi
+        |--------------------------------------------------------------------------
+        */
 
         DB::commit();
 
-        $this->catatAktivitas("Menambahkan peminjaman baru untuk user ID {$request->user_id}.");
+        /*
+        |--------------------------------------------------------------------------
+        | Catat aktivitas
+        |--------------------------------------------------------------------------
+        */
+
+        $user = User::find($request->user_id);
+
+        $this->catatAktivitas(
+            "Menambahkan peminjaman baru untuk user '{$user->name}' (Peminjaman #{$peminjaman->id})."
+        );
 
         return redirect()
             ->route('admin.peminjaman.index')
-            ->with('success', 'Data peminjaman berhasil diajukan.');
+            ->with(
+                'success',
+                'Data peminjaman berhasil diajukan.'
+            );
 
     } catch (\Exception $e) {
+
         DB::rollBack();
 
         return back()
             ->withInput()
-            ->with('error', $e->getMessage());
+            ->with(
+                'error',
+                $e->getMessage()
+            );
     }
 }
 
@@ -1164,6 +1291,17 @@ public function destroyPeminjaman($id)
     return redirect()
         ->route('admin.peminjaman.index')
         ->with('success', 'Data peminjaman berhasil dihapus.');
+}
+
+public function showPeminjaman($id)
+{
+    $peminjaman = Peminjaman::with([
+        'user',
+        'detailPinjams.alat',
+        'pengembalian.petugas'
+    ])->findOrFail($id);
+
+    return view('admin.peminjaman.show', compact('peminjaman'));
 }
 
 public function searchUser(Request $request)

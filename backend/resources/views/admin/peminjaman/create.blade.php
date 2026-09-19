@@ -113,9 +113,8 @@
                         name="jumlah[]"
                         value="1"
                         min="1"
-                        placeholder="Jumlah"
+                        class="alat-jumlah w-24 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none"
                         required
-                        class="w-24 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none"
                     >
 
                     <button
@@ -153,6 +152,41 @@
             </button>
         </div>
     </form>
+
+    <!-- Modal Minimal Alat -->
+<div
+    id="minimal-alat-modal"
+    class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/50 px-4"
+>
+    <div
+        class="w-full max-w-sm bg-white rounded-xl shadow-xl p-6"
+    >
+        <div class="flex items-center gap-3 mb-4">
+            <div class="flex items-center justify-center w-10 h-10 rounded-full bg-yellow-100">
+                <span class="text-yellow-600 text-lg">!</span>
+            </div>
+
+            <h3 class="text-lg font-semibold text-gray-800">
+                Tidak Bisa Dihapus
+            </h3>
+        </div>
+
+        <p class="text-sm text-gray-600 mb-6">
+            Minimal harus ada 1 alat yang dipilih untuk membuat peminjaman.
+        </p>
+
+        <div class="flex justify-end">
+            <button
+                type="button"
+                onclick="closeMinimalAlatModal()"
+                class="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-semibold transition"
+            >
+                Mengerti
+            </button>
+        </div>
+    </div>
+</div>
+
 </div>
 
 <!-- Script Sederhana untuk Tambah/Hapus Baris Alat -->
@@ -320,20 +354,16 @@
 
 
                         item.addEventListener('click', function () {
-
-                            searchInput.value =
-                                alat.nama_alat;
-
-                            alatId.value =
-                                alat.id;
-
-                            selectedAlat.textContent =
-                                `✓ Dipilih: ${alat.nama_alat} | Stok: ${alat.stok}`;
-
+                            searchInput.value = alat.nama_alat;
+                            alatId.value = alat.id;
+                            const jumlahInput = row.querySelector('.alat-jumlah');
+                            jumlahInput.max = alat.stok;
+                            if (parseInt(jumlahInput.value) > alat.stok) {
+                                jumlahInput.value = alat.stok;
+                            }
+                            selectedAlat.textContent = `✓ Dipilih: ${alat.nama_alat} | Stok tersedia: ${alat.stok}`;
                             results.classList.add('hidden');
-
                         });
-
 
                         results.appendChild(item);
 
@@ -411,10 +441,17 @@
 
         } else {
 
-            alert('Minimal harus ada 1 alat yang dipilih.');
+            document.getElementById('minimal-alat-modal')
+                .classList.remove('hidden');
 
         }
 
+    }
+
+    function closeMinimalAlatModal() {
+
+        document.getElementById('minimal-alat-modal')
+            .classList.add('hidden');
     }
 
 

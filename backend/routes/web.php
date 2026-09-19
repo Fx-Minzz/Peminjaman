@@ -33,6 +33,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/peminjaman', [AdminController::class, 'indexPeminjaman'])->name('peminjaman.index');
     Route::get('/peminjaman/create', [AdminController::class, 'createPeminjaman'])->name('peminjaman.create');
     Route::post('/peminjaman', [AdminController::class, 'storePeminjaman'])->name('peminjaman.store');
+    Route::get('/peminjaman/{id}', [AdminController::class, 'showPeminjaman'])->name('peminjaman.show');
 
     // Search User & Alat untuk Form Peminjaman
     Route::get('/search/users', [AdminController::class, 'searchUser'])->name('search.users');

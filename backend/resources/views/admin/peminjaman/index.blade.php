@@ -17,55 +17,163 @@
         </div>
     @endif
 
-    <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
+    <!-- Header -->
+    <div class="mb-4 flex flex-col md:flex-row gap-3">
 
-        <div class="p-5 border-b border-gray-200 bg-gray-50 flex flex-col md:flex-row justify-between items-center gap-4">
+        <!-- Search -->
+        <form
+            action="{{ route('admin.peminjaman.index') }}"
+            method="GET"
+            class="flex flex-1"
+        >
+            <input
+                type="text"
+                name="search"
+                value="{{ $search }}"
+                placeholder="Cari peminjam, email, alat, atau status..."
+                class="flex-1 px-4 py-2 text-sm border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
 
-            <h3 class="text-lg font-bold text-gray-800">
-                Daftar Transaksi Peminjaman
-            </h3>
+            <button
+                type="submit"
+                class="bg-gray-800 hover:bg-gray-900 text-white px-5 py-2 text-sm font-semibold rounded-r-lg transition"
+            >
+                Cari
+            </button>
+        </form>
 
-            <div class="flex items-center gap-3 w-full md:w-auto">
+        <!-- Tambah -->
+        <a
+            href="{{ route('admin.peminjaman.create') }}"
+            class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition text-center"
+        >
+            + Tambah Peminjaman
+        </a>
 
-                <!-- Form Search -->
-                <form action="{{ route('admin.peminjaman.index') }}" method="GET" class="flex w-full md:w-auto">
+    </div>
 
-                    <input
-                        type="text"
-                        name="search"
-                        value="{{ request('search') }}"
-                        placeholder="Cari nama peminjam / status..."
-                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
 
-                    <button
-                        type="submit"
-                        class="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 text-sm font-semibold rounded-r-lg transition"
-                    >
-                        Cari
-                    </button>
+    <!-- Filter -->
+    <div class="bg-gray-50 border border-gray-200 rounded-lg p-5 mb-6">
 
-                    @if(request('search'))
-                        <a
-                            href="{{ route('admin.peminjaman.index') }}"
-                            class="ml-2 bg-gray-300 hover:bg-gray-400 text-gray-700 px-3 py-2 text-sm rounded-lg flex items-center transition"
-                        >
-                            Reset
-                        </a>
-                    @endif
+        <div class="flex items-center justify-between mb-4">
 
-                </form>
+            <div>
+                <h3 class="text-sm font-bold text-gray-800">
+                    Filter Peminjaman
+                </h3>
 
-                <!-- Tombol Tambah -->
+                <p class="text-xs text-gray-500 mt-1">
+                    Gunakan filter untuk menemukan transaksi dengan lebih cepat.
+                </p>
+            </div>
+
+            @if(request()->hasAny(['search', 'status', 'sort']))
                 <a
-                    href="{{ route('admin.peminjaman.create') }}"
-                    class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition whitespace-nowrap"
+                    href="{{ route('admin.peminjaman.index') }}"
+                    class="text-sm text-blue-600 hover:text-blue-800 font-semibold"
                 >
-                    + Tambah Peminjaman
+                    Reset semua
                 </a>
+            @endif
+
+        </div>
+
+        <form
+            action="{{ route('admin.peminjaman.index') }}"
+            method="GET"
+        >
+
+            <input
+                type="hidden"
+                name="search"
+                value="{{ $search }}"
+            >
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                <!-- Status -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">
+                        Status
+                    </label>
+
+                    <select
+                        name="status"
+                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                        <option value="">Semua Status</option>
+
+                        <option value="diajukan" {{ $status === 'diajukan' ? 'selected' : '' }}>
+                            Diajukan
+                        </option>
+
+                        <option value="dipinjam" {{ $status === 'dipinjam' ? 'selected' : '' }}>
+                            Dipinjam
+                        </option>
+
+                        <option value="dikembalikan" {{ $status === 'dikembalikan' ? 'selected' : '' }}>
+                            Dikembalikan
+                        </option>
+
+                        <option value="telat" {{ $status === 'telat' ? 'selected' : '' }}>
+                            Telat
+                        </option>
+                    </select>
+                </div>
+
+                <!-- Sort -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">
+                        Urutkan
+                    </label>
+
+                    <select
+                        name="sort"
+                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                        <option value="latest" {{ $sort === 'latest' ? 'selected' : '' }}>
+                            Terbaru
+                        </option>
+
+                        <option value="oldest" {{ $sort === 'oldest' ? 'selected' : '' }}>
+                            Terlama
+                        </option>
+
+                        <option value="name_asc" {{ $sort === 'name_asc' ? 'selected' : '' }}>
+                            Nama Peminjam A-Z
+                        </option>
+
+                        <option value="name_desc" {{ $sort === 'name_desc' ? 'selected' : '' }}>
+                            Nama Peminjam Z-A
+                        </option>
+                    </select>
+                </div>
 
             </div>
-        </div>
+
+            <div class="mt-4 flex justify-between items-center">
+
+                <p class="text-xs text-gray-500">
+                    Menampilkan {{ $peminjamans->total() }} transaksi.
+                </p>
+
+                <button
+                    type="submit"
+                    class="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-semibold transition"
+                >
+                    Terapkan Filter
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+
+    <!-- Tabel -->
+    <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
 
         <div class="overflow-x-auto">
 
@@ -73,11 +181,27 @@
 
                 <thead>
                     <tr class="bg-gray-100 text-gray-600 text-sm uppercase tracking-wider">
-                        <th class="py-3 px-4 border-b">Peminjam</th>
-                        <th class="py-3 px-4 border-b">Alat yang Dipinjam</th>
-                        <th class="py-3 px-4 border-b">Tgl Pinjam / Rencana Kembali</th>
-                        <th class="py-3 px-4 border-b">Status</th>
-                        <th class="py-3 px-4 border-b">Aksi</th>
+
+                        <th class="py-3 px-4 border-b">
+                            Peminjam
+                        </th>
+
+                        <th class="py-3 px-4 border-b">
+                            Alat yang Dipinjam
+                        </th>
+
+                        <th class="py-3 px-4 border-b">
+                            Tanggal
+                        </th>
+
+                        <th class="py-3 px-4 border-b text-center">
+                            Status
+                        </th>
+
+                        <th class="py-3 px-4 border-b text-center">
+                            Aksi
+                        </th>
+
                     </tr>
                 </thead>
 
@@ -88,24 +212,35 @@
                         <tr class="hover:bg-gray-50 transition align-top">
 
                             <!-- Peminjam -->
-                            <td class="py-3 px-4 border-b font-medium text-gray-900">
-                                {{ $peminjaman->user->name ?? 'User Dihapus' }}
-                            </td>
-
-                            <!-- Alat yang Dipinjam -->
                             <td class="py-3 px-4 border-b">
 
-                                <ul class="list-disc list-inside space-y-1">
+                                <p class="font-semibold text-gray-900">
+                                    {{ $peminjaman->user->name ?? 'User Dihapus' }}
+                                </p>
+
+                                @if($peminjaman->user)
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        {{ $peminjaman->user->email }}
+                                    </p>
+                                @endif
+
+                            </td>
+
+
+                            <!-- Alat -->
+                            <td class="py-3 px-4 border-b">
+
+                                <ul class="space-y-1">
 
                                     @foreach($peminjaman->detailPinjams as $detail)
 
                                         <li>
-                                            <span class="font-semibold">
+                                            <span class="font-semibold text-gray-800">
                                                 {{ $detail->alat->nama_alat ?? 'Alat Dihapus' }}
                                             </span>
 
-                                            <span class="text-xs bg-gray-200 px-1.5 py-0.5 rounded">
-                                                ({{ $detail->jumlah }} pcs)
+                                            <span class="text-xs bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded">
+                                                {{ $detail->jumlah }} pcs
                                             </span>
                                         </li>
 
@@ -115,32 +250,42 @@
 
                             </td>
 
+
                             <!-- Tanggal -->
-                            <td class="py-3 px-4 border-b text-xs text-gray-600">
+                            <td class="py-3 px-4 border-b text-xs">
 
-                                <span class="block">
-                                    Pinjam: {{ $peminjaman->tgl_pinjam }}
-                                </span>
+                                <p class="text-gray-600">
+                                    <span class="font-semibold">
+                                        Pinjam:
+                                    </span>
+                                    {{ $peminjaman->tgl_pinjam }}
+                                </p>
 
-                                <span class="block font-semibold">
-                                    Rencana: {{ $peminjaman->tgl_kembali_plan }}
-                                </span>
+                                <p class="text-gray-600 mt-1">
+                                    <span class="font-semibold">
+                                        Rencana:
+                                    </span>
+                                    {{ $peminjaman->tgl_kembali_plan }}
+                                </p>
 
                             </td>
 
+
                             <!-- Status -->
-                            <td class="py-3 px-4 border-b">
+                            <td class="py-3 px-4 border-b text-center">
 
                                 <span
-                                    class="px-2.5 py-1 text-xs font-semibold rounded-full
-                                    @if($peminjaman->status == 'diajukan')
+                                    class="inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-full
+                                    @if($peminjaman->status === 'diajukan')
                                         bg-yellow-100 text-yellow-800
-                                    @elseif($peminjaman->status == 'dipinjam')
+                                    @elseif($peminjaman->status === 'dipinjam')
                                         bg-blue-100 text-blue-800
-                                    @elseif($peminjaman->status == 'dikembalikan')
+                                    @elseif($peminjaman->status === 'dikembalikan')
                                         bg-emerald-100 text-emerald-800
-                                    @else
+                                    @elseif($peminjaman->status === 'telat')
                                         bg-red-100 text-red-800
+                                    @else
+                                        bg-gray-100 text-gray-700
                                     @endif"
                                 >
                                     {{ ucfirst($peminjaman->status) }}
@@ -148,16 +293,23 @@
 
                             </td>
 
+
                             <!-- Aksi -->
                             <td class="py-3 px-4 border-b">
 
-                                <div class="flex flex-col space-y-2">
+                                <div class="flex flex-col gap-2">
 
-                                    <!-- Form Ubah Status -->
+                                <a
+                                    href="{{ route('admin.peminjaman.show', $peminjaman->id) }}"
+                                    class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs font-semibold transition text-center"
+                                >
+                                    Detail
+                                </a>
+
+                                    <!-- Ubah Status -->
                                     <form
                                         action="{{ route('admin.peminjaman.updateStatus', $peminjaman->id) }}"
                                         method="POST"
-                                        class="flex items-center space-x-1"
                                     >
 
                                         @csrf
@@ -166,26 +318,26 @@
                                         <select
                                             name="status"
                                             onchange="this.form.submit()"
-                                            class="text-xs border border-gray-300 rounded px-2 py-1 focus:outline-none"
+                                            class="w-full text-xs border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-500"
                                         >
 
                                             <option value="diajukan"
-                                                {{ $peminjaman->status == 'diajukan' ? 'selected' : '' }}>
+                                                {{ $peminjaman->status === 'diajukan' ? 'selected' : '' }}>
                                                 Diajukan
                                             </option>
 
                                             <option value="dipinjam"
-                                                {{ $peminjaman->status == 'dipinjam' ? 'selected' : '' }}>
+                                                {{ $peminjaman->status === 'dipinjam' ? 'selected' : '' }}>
                                                 Dipinjam
                                             </option>
 
                                             <option value="dikembalikan"
-                                                {{ $peminjaman->status == 'dikembalikan' ? 'selected' : '' }}>
-                                                dikembalikan
+                                                {{ $peminjaman->status === 'dikembalikan' ? 'selected' : '' }}>
+                                                Dikembalikan
                                             </option>
 
                                             <option value="telat"
-                                                {{ $peminjaman->status == 'telat' ? 'selected' : '' }}>
+                                                {{ $peminjaman->status === 'telat' ? 'selected' : '' }}>
                                                 Telat
                                             </option>
 
@@ -193,7 +345,8 @@
 
                                     </form>
 
-                                    <!-- Tombol Hapus -->
+
+                                    <!-- Hapus -->
                                     <form
                                         action="{{ route('admin.peminjaman.destroy', $peminjaman->id) }}"
                                         method="POST"
@@ -221,9 +374,14 @@
                     @empty
 
                         <tr>
-                            <td colspan="5" class="py-4 text-center text-gray-500">
+
+                            <td
+                                colspan="5"
+                                class="py-8 text-center text-gray-500"
+                            >
                                 Belum ada data peminjaman.
                             </td>
+
                         </tr>
 
                     @endforelse
@@ -234,9 +392,15 @@
 
         </div>
 
-        <div class="p-4 border-t border-gray-200 bg-gray-50">
-            {{ $peminjamans->links() }}
-        </div>
+
+        <!-- Pagination -->
+        @if($peminjamans->hasPages())
+
+            <div class="p-4 border-t border-gray-200 bg-gray-50">
+                {{ $peminjamans->links() }}
+            </div>
+
+        @endif
 
     </div>
 
