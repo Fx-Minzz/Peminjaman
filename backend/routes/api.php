@@ -17,7 +17,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
 
-    Route::middleware('role.admin')->group(function () {
+    Route::middleware('role:admin')->group(function () {
         Route::apiResource('kategori', KategoriController::class);
         Route::apiResource('alat', AlatController::class);
         Route::get('/katalog', [AlatController::class, 'katalog']);
@@ -35,12 +35,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/laporan-peminjaman', [LaporanController::class, 'index']);
     });
 
-    Route::middleware('role.petugas')->group(function () {
+    Route::middleware('role:petugas')->group(function () {
         Route::post('/peminjaman/{peminjaman}/approve', [PeminjamanController::class, 'approve']);
         Route::post('/pengembalian', [PengembalianController::class, 'store']);
     });
 
-    Route::middleware('role.peminjam')->group(function () {
+    Route::middleware('role:peminjam')->group(function () {
         Route::post('/peminjaman', [PeminjamanController::class, 'store']);
         Route::get('/riwayat-pinjam', [PeminjamanController::class, 'riwayat']);
     });

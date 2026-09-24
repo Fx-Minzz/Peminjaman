@@ -232,7 +232,7 @@
 
                                 <ul class="space-y-1">
 
-                                    @foreach($peminjaman->detailPinjams as $detail)
+                                    @foreach($peminjaman->detailPinjam as $detail)
 
                                         <li>
                                             <span class="font-semibold text-gray-800">

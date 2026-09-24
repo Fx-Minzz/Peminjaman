@@ -789,7 +789,7 @@
            PARTICLE SETTINGS
         ========================================== */
 
-        const particleCount = 150;
+        const particleCount = 500;
 
 
         for (

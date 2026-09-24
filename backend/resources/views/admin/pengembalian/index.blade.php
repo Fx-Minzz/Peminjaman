@@ -130,7 +130,7 @@
 
                             <ul class="list-disc list-inside space-y-1">
 
-                                @foreach($pengembalian->peminjaman->detailPinjams as $detail)
+                                @foreach($pengembalian->peminjaman->detailPinjam as $detail)
 
                                     <li>
 

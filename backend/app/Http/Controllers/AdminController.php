@@ -13,6 +13,7 @@ use App\Models\Peminjaman;
 use App\Models\DetailPinjam;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class AdminController extends Controller
 {
@@ -252,7 +253,7 @@ public function indexPengembalian(Request $request)
 
     $pengembalians = \App\Models\Pengembalian::with([
         'peminjaman.user',
-        'peminjaman.detailPinjams.alat',
+        'peminjaman.detailPinjam.alat',
         'petugas'
     ])
     ->when($search, function ($query, $search) {
@@ -275,7 +276,7 @@ public function createPengembalian()
 {
     $peminjamans = Peminjaman::with([
         'user',
-        'detailPinjams.alat'
+        'detailPinjam.alat'
     ])
         ->whereIn('status', ['dipinjam', 'telat', 'dikembalikan'])
         ->whereDoesntHave('pengembalian')
@@ -302,7 +303,7 @@ public function storePengembalian(Request $request)
 
     try {
 
-        $peminjaman = Peminjaman::with('detailPinjams.alat')
+        $peminjaman = Peminjaman::with('detailPinjam.alat')
             ->findOrFail($request->peminjaman_id);
 
         // Pastikan hanya peminjaman aktif yang dapat dikembalikan
@@ -372,7 +373,7 @@ public function storePengembalian(Request $request)
         |--------------------------------------------------------------------------
         */
 
-        foreach ($peminjaman->detailPinjams as $detail) {
+        foreach ($peminjaman->detailPinjam as $detail) {
             $detail->alat->increment('stok', $detail->jumlah);
         }
 
@@ -414,14 +415,14 @@ public function destroyPengembalian($id)
     try {
 
         $pengembalian = Pengembalian::with([
-            'peminjaman.detailPinjams.alat'
+            'peminjaman.detailPinjam.alat'
         ])->findOrFail($id);
 
         $peminjaman = $pengembalian->peminjaman;
 
         // Karena pengembalian dibatalkan,
         // stok harus dikurangi kembali.
-        foreach ($peminjaman->detailPinjams as $detail) {
+        foreach ($peminjaman->detailPinjam as $detail) {
 
             $alat = $detail->alat;
 
@@ -528,7 +529,7 @@ public function editPengembalian($id)
 {
     $pengembalian = Pengembalian::with([
         'peminjaman.user',
-        'peminjaman.detailPinjams.alat'
+        'peminjaman.detailPinjam.alat'
     ])->findOrFail($id);
 
     return view(
@@ -540,7 +541,7 @@ public function editPengembalian($id)
 // 7. Memproses pengembalian
 public function prosesPengembalian($id)
 {
-    $peminjaman = Peminjaman::with('detailPinjams.alat')
+    $peminjaman = Peminjaman::with('detailPinjam.alat')
         ->findOrFail($id);
 
     // Pastikan hanya peminjaman yang sedang dipinjam atau telat
@@ -556,7 +557,7 @@ public function prosesPengembalian($id)
 
     try {
         // Kembalikan stok semua alat
-        foreach ($peminjaman->detailPinjams as $detail) {
+        foreach ($peminjaman->detailPinjam as $detail) {
             $detail->alat->increment('stok', $detail->jumlah);
         }
 
@@ -937,7 +938,7 @@ public function indexPeminjaman(Request $request)
 
     $peminjamans = Peminjaman::with([
         'user',
-        'detailPinjams.alat'
+        'detailPinjam.alat'
     ])
         ->when($search, function ($query, $search) {
             $query->where(function ($q) use ($search) {
@@ -949,7 +950,7 @@ public function indexPeminjaman(Request $request)
                           ->orWhere('email', 'like', "%{$search}%");
                     })
 
-                    ->orWhereHas('detailPinjams.alat', function ($q) use ($search) {
+                    ->orWhereHas('detailPinjam.alat', function ($q) use ($search) {
                         $q->where('nama_alat', 'like', "%{$search}%");
                     });
             });
@@ -1147,7 +1148,7 @@ public function storePeminjaman(Request $request)
 
 public function updateStatusPeminjaman(Request $request, $id)
 {
-    $peminjaman = Peminjaman::with('detailPinjams.alat')
+    $peminjaman = Peminjaman::with('detailPinjam.alat')
         ->findOrFail($id);
 
     $request->validate([
@@ -1172,7 +1173,7 @@ public function updateStatusPeminjaman(Request $request, $id)
             $statusBaru === 'dipinjam'
         ) {
 
-            foreach ($peminjaman->detailPinjams as $detail) {
+            foreach ($peminjaman->detailPinjam as $detail) {
 
                 $alat = $detail->alat;
 
@@ -1198,7 +1199,7 @@ public function updateStatusPeminjaman(Request $request, $id)
         ) {
 
             // Kembalikan stok
-            foreach ($peminjaman->detailPinjams as $detail) {
+            foreach ($peminjaman->detailPinjam as $detail) {
                 $detail->alat->increment('stok', $detail->jumlah);
             }
 
@@ -1277,11 +1278,11 @@ public function updateStatusPeminjaman(Request $request, $id)
 // 5. Menghapus data peminjaman
 public function destroyPeminjaman($id)
 {
-    $peminjaman = Peminjaman::with('detailPinjams')->findOrFail($id);
+    $peminjaman = Peminjaman::with('detailPinjam')->findOrFail($id);
 
     // Jika statusnya sedang dipinjam, kembalikan stok terlebih dahulu sebelum dihapus
     if ($peminjaman->status == 'dipinjam') {
-        foreach ($peminjaman->detailPinjams as $detail) {
+        foreach ($peminjaman->detailPinjam as $detail) {
             $detail->alat->increment('stok', $detail->jumlah);
         }
     }
@@ -1297,7 +1298,7 @@ public function showPeminjaman($id)
 {
     $peminjaman = Peminjaman::with([
         'user',
-        'detailPinjams.alat',
+        'detailPinjam.alat',
         'pengembalian.petugas'
     ])->findOrFail($id);
 
@@ -1352,6 +1353,166 @@ private function catatAktivitas($aktivitas) {
         'user_id' => auth()->id(),
         'aktivitas' => $aktivitas,
     ]);
+}
+
+public function indexLaporan(Request $request)
+{
+    // Query dasar peminjaman
+    $query = Peminjaman::with([
+        'user',
+        'detailPinjam.alat'
+    ]);
+
+    // Filter tanggal mulai
+    if ($request->filled('tanggal_mulai')) {
+        $query->whereDate(
+            'tanggal_pinjam',
+            '>=',
+            $request->tanggal_mulai
+        );
+    }
+
+    // Filter tanggal akhir
+    if ($request->filled('tanggal_akhir')) {
+        $query->whereDate(
+            'tanggal_pinjam',
+            '<=',
+            $request->tanggal_akhir
+        );
+    }
+
+    // Filter status
+    if ($request->filled('status')) {
+        $query->where(
+            'status',
+            $request->status
+        );
+    }
+
+    // Filter kategori alat
+    if ($request->filled('kategori_id')) {
+        $query->whereHas('detailPinjam.alat', function ($q) use ($request) {
+            $q->where('kategori_id', $request->kategori_id);
+        });
+    }
+
+    // Data tabel
+    $peminjaman = $query
+        ->latest('created_at')
+        ->paginate(10);
+
+    // =========================
+    // STATISTIK
+    // =========================
+
+    $totalPeminjaman = Peminjaman::count();
+
+    $totalDipinjam = Peminjaman::where(
+        'status',
+        'dipinjam'
+    )->count();
+
+    $totalSelesai = Peminjaman::where(
+        'status',
+        'selesai'
+    )->count();
+
+    // Total denda dari pengembalian
+    $totalDenda = Pengembalian::sum('denda');
+
+    // User
+    $totalUser = User::count();
+
+    $totalPeminjam = User::where(
+        'role',
+        'peminjam'
+    )->count();
+
+    // Alat
+    $totalAlat = Alat::count();
+
+    $totalKategori = Kategori::count();
+
+    // Data kategori untuk filter
+    $kategoris = Kategori::orderBy(
+        'nama_kategori'
+    )->get();
+
+    return view('admin.laporan.index', compact(
+        'peminjaman',
+        'kategoris',
+        'totalPeminjaman',
+        'totalDipinjam',
+        'totalSelesai',
+        'totalDenda',
+        'totalUser',
+        'totalPeminjam',
+        'totalAlat',
+        'totalKategori'
+    ));
+}
+
+
+public function cetakLaporan(Request $request)
+{
+    $query = Peminjaman::with([
+        'user',
+        'detailPinjam.alat'
+    ]);
+
+    if ($request->filled('tanggal_mulai')) {
+        $query->whereDate('created_at', '>=', $request->tanggal_mulai);
+    }
+
+    if ($request->filled('tanggal_akhir')) {
+        $query->whereDate('created_at', '<=', $request->tanggal_akhir);
+    }
+
+    if ($request->filled('status')) {
+        $query->where('status', $request->status);
+    }
+
+    if ($request->filled('kategori_id')) {
+        $query->whereHas('detailPinjam.alat', function ($q) use ($request) {
+            $q->where('kategori_id', $request->kategori_id);
+        });
+    }
+
+    $peminjaman = $query
+        ->latest('created_at')
+        ->get();
+
+    $totalPeminjaman = $peminjaman->count();
+
+    $totalDipinjam = $peminjaman
+        ->where('status', 'dipinjam')
+        ->count();
+
+    $totalSelesai = $peminjaman
+        ->where('status', 'selesai')
+        ->count();
+
+    $totalDenda = Pengembalian::sum('denda');
+
+    $tanggalMulai = $request->tanggal_mulai;
+    $tanggalAkhir = $request->tanggal_akhir;
+
+    $pdf = Pdf::loadView(
+        'admin.laporan.pdf',
+        compact(
+            'peminjaman',
+            'totalPeminjaman',
+            'totalDipinjam',
+            'totalSelesai',
+            'totalDenda',
+            'tanggalMulai',
+            'tanggalAkhir'
+        )
+    );
+
+    $pdf->setPaper('a4', 'landscape');
+
+    return $pdf->stream('laporan-peminjaman.pdf');
 }
 
 }

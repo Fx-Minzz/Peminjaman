@@ -62,6 +62,10 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     // Log Aktivitas
     Route::get('/log-aktivitas', [AdminController::class, 'logAktivitas'])->name('log.index');
 
+    // Laporan
+    Route::get('/laporan', [AdminController::class, 'indexLaporan'])->name('laporan.index');
+    Route::get('/laporan/pdf', [AdminController::class, 'cetakLaporan'])->name('laporan.pdf');
+
 });
 
 // Para Pekerja (Petugas)
