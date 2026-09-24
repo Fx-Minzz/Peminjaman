@@ -360,6 +360,28 @@
 
                     </a>
 
+                    {{-- Laporan --}}
+
+                    <a
+                        href="{{ route('admin.laporan.index') }}"
+                        data-sidebar-link
+                        class="
+                            block
+                            px-4
+                            py-2
+                            rounded-lg
+                            transition
+                            {{ request()->routeIs('admin.laporan.*')
+                                ? 'bg-transparent text-white font-medium'
+                                : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                            }}
+                        "
+                    >
+
+                        Laporan
+
+                    </a>
+
 
                 @endif
 
